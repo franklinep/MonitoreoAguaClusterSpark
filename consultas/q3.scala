@@ -34,7 +34,13 @@ val prepModel = prepPipeline.fit(trainRaw)
 val train = prepModel.transform(trainRaw).cache()
 val test  = prepModel.transform(testRaw).cache()
 
-val numFeatures = train.select("features").head().getAs.size
+val numFeatures = train
+  .select("features")
+  .where(col("features").isNotNull)
+  .first()
+  .getAs[Vector]("features")
+  .size
+
 val layers = Array(numFeatures, 16, 8, 2)
 
 // =====================
