@@ -3,43 +3,30 @@ import org.apache.spark.sql.functions._
 spark.sparkContext.setLogLevel("WARN")
 
 
-val puntosSel = puntos
-  .select(
+val puntosSel = puntos.select(
     col("point_id"),
     col("coord_norte").cast("double").alias("coord_norte"),
     col("coord_este").cast("double").alias("coord_este"),
     col("tipo_punto").alias("tipo_punto")
   )
 
-val campanasSel = campanas
-  .select(
+val campanasSel = campanas.select(
     col("campaign_id"),
     col("anho").cast("double").alias("anho"),
     col("mes_num").cast("double").alias("mes_num")
   )
 
-val baseML = mediciones
-  .filter(col("tipo_muestra") === "metales_totales")
-  .withColumn("resultado", col("resultado").cast("double"))
-  .filter(col("resultado").isNotNull && !isnan(col("resultado")))
-  .join(puntosSel, Seq("point_id"), "inner")
-  .join(campanasSel, Seq("campaign_id"), "inner")
-  .filter(col("coord_norte").isNotNull && !isnan(col("coord_norte")))
-  .filter(col("coord_este").isNotNull && !isnan(col("coord_este")))
-  .withColumn(
+val baseML = mediciones.filter(col("tipo_muestra") === "metales_totales").withColumn("resultado", col("resultado").cast("double")).filter(col("resultado").isNotNull && !isnan(col("resultado"))).join(puntosSel, Seq("point_id"), "inner").join(campanasSel, Seq("campaign_id"), "inner").filter(col("coord_norte").isNotNull && !isnan(col("coord_norte"))).filter(col("coord_este").isNotNull && !isnan(col("coord_este"))).withColumn(
     "tipo_punto",
-    when(col("tipo_punto").isNull || length(trim(col("tipo_punto"))) === 0, lit("DESCONOCIDO"))
-      .otherwise(trim(col("tipo_punto")))
-  )
-  .select(
+    when(col("tipo_punto").isNull || length(trim(col("tipo_punto"))) === 0, lit("DESCONOCIDO")).otherwise(trim(col("tipo_punto")))
+  ).select(
     col("resultado"),
     col("coord_norte"),
     col("coord_este"),
     col("anho"),
     col("mes_num"),
     col("tipo_punto")
-  )
-  .cache()
+  ).cache()
 
 println(s"[PREP] baseML rows = ${baseML.count()}")
 
